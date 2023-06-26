@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Text Table</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
+</head>
+
+<body>
+
+    <h2>Excel VBA Create Text Table From Selection</h2>
+    <pre>
+        <code class="language-vbnet">
+            Sub CreateTextTableFromSelection()
+            Const UseCurrentRegion As Boolean = True
+            Const SpacesBetweenColumns As Long = 2
+            Const ColumnDelimiter As String = " | "
+            Const Dash As String = "-"
+            Dim Target As Range
+            Set Target = Selection
+            
+            If UseCurrentRegion Then Set Target = Target.CurrentRegion
+            Dim Data As Variant, RowData As Variant, MaxColumns() As Long
+            
+            Data = Target.Value
+                
+            Dim MapRows As New Collection
+            Dim r As Long, c As Long
+                
+            ReDim MaxColumns(1 To Target.Columns.Count)
+                
+            ' First calculate max column widths
+            For r = 1 To Target.Rows.Count
+                For c = 1 To Target.Columns.Count
+                    If Len(Data(r, c)) > MaxColumns(c) Then MaxColumns(c) = Len(Data(r, c)) + SpacesBetweenColumns
+                Next
+            Next
+                
+            Dim Text As String
+            For r = 1 To Target.Rows.Count
+                ReDim RowData(1 To Target.Columns.Count)
+                For c = 1 To Target.Columns.Count
+                    Text = CStr(Data(r, c))
+                    Text = Text & Space(MaxColumns(c) - Len(Text)) ' Add padding spaces to align the columns
+                    RowData(c) = Text
+                Next
+                    
+                MapRows.Add ColumnDelimiter & Join(RowData, ColumnDelimiter) & ColumnDelimiter
+            Next
+                
+            ' Create the Dashes and insert them into MapRows after the header row
+            For c = 1 To Target.Columns.Count
+                RowData(c) = String(MaxColumns(c), Dash)
+            Next
+            MapRows.Add Item:=ColumnDelimiter & Join(RowData, ColumnDelimiter) & ColumnDelimiter, After:=1  'inserting at 2nd position
+                
+            Dim Result As Variant
+            ReDim Result(1 To MapRows.Count)
+                
+            For r = 1 To MapRows.Count
+                Result(r) = MapRows(r)
+            Next
+                
+            Text = Join(Result, vbNewLine)
+            CreateObject("htmlfile").ParentWindow.ClipboardData.SetData "text", Text
+            Debug.Print Text
+        End Sub
+     
+        </code>
+    </pre>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-vbnet.min.js"></script>
+
+</body>
+
+</html>
